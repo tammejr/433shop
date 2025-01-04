@@ -1,5 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+import logging
 
 # Bot Configuration
 TOKEN = "7574850672:AAFnpvLklfq5jO9d5d6wPTgm2R0f4AaAQNk"
@@ -51,6 +52,83 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "እንኳን ወደ 4-3-3 Star ሽያጭ Bot በሰላም መጣችሁ 🌟\nStar ልመግዛት ከስር ያለውን 'Buy Star' ይጫኑ.",
         reply_markup=reply_markup
     )
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    help_text = """
+⭐️ Welcome to 4-3-3 Star Service! ⭐️
+We are here to make your experience seamless and enjoyable. Below are some frequently asked questions to guide you:
+
+🔹 General Questions:
+
+1. How do I purchase stars?  
+- Tap 'Buy Star' and select the payment method (Birr or TON). Choose the package you want and follow the instructions.
+
+2. What payment methods are available?  
+- We currently accept:  
+  - Telebirr:
+  - CBE (Commercial Bank of Ethiopia): 
+  - Abyssinia Bank: 
+  - TON (crypto payments).
+
+3. Is there a discount for bulk purchases?  
+- Yes! Orders of 4000 stars or more receive a 5% discount.
+
+4. What if I need a custom number of stars?  
+- Contact us directly for custom packages or large orders.
+ 
+5. Do you accept international payments?  
+- At the moment, we primarily accept local payments. TON is available for international users.
+
+🔹 Order Process:
+
+6. How do I confirm my payment?  
+- After making the payment, upload a screenshot as proof. We will verify and process your order shortly.
+
+8. How long does it take to receive stars after payment?  
+- Typically, stars are delivered within 5-15 minutes after payment verification. Delays may occur during high traffic, but we ensure prompt delivery.
+
+8. What if I make a mistake during the payment?  
+- Please contact support immediately with your payment details, and we will assist you.
+
+🔹 Account and Security:
+
+9. Do I need to provide my Telegram username for the purchase?  
+- Yes, to deliver stars directly to your account, we require your Telegram username.
+
+10. Is my information safe with you?  
+- Absolutely! We prioritize your privacy and never share your details with third parties.
+
+🔹 Support and Contact:
+
+11. How can I contact support?  
+- You can reach us directly through the bot by typing /support or contact us at 0946264614.
+
+12. What should I do if my order is delayed?  
+- If you haven’t received your stars within 30 minutes, please message us directly, and we will resolve the issue promptly.
+
+13. Can I request a refund?  
+- Refunds are available in the case of failed or incorrect orders. Please ensure to provide proof of payment for a faster resolution.
+
+🔹 Additional Information:
+
+14. Can I purchase stars for someone else?  
+- Yes! Provide their Telegram username during the purchase process.
+
+15. Do stars expire?  
+- No, stars do not expire and can be used at any time.
+
+🔹 Need Further Assistance?  
+- If you have any questions not covered here, please don't hesitate to reach out! We're here to help.  
+
+🌟 Thank you for choosing 4-3-3 Star Service! 🌟
+"""
+    keyboard = [
+        [InlineKeyboardButton("📞 Contact Support", url=f"https://t.me/TammeJr")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(help_text, reply_markup=reply_markup)
+
 
 
 # Payment Method Selection
@@ -114,7 +192,7 @@ async def show_ton_packages(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def request_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     package = update.callback_query.data
     context.user_data['package'] = package
-    await update.callback_query.message.reply_text("Star እንዲገዛበት የምትፈልጉትን የ Telegram Username ያስገቡ - ያለ Telegram Username መግዛት አንችልም!:")
+    await update.callback_query.message.reply_text("Star እንዲገዛበት የምትፈልጉትን የ Telegram Username ያስገቡ !:")
 
 
 # Send Payment Details Based on Method
@@ -142,7 +220,7 @@ async def payment_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "ክፍያ የፈፀማችሁበት ማረጋገጫ Screenshot የሚከተለውን ማስፈንጠሪያ ተጭነው ያስገቡ."
         )
 
-    keyboard = [[InlineKeyboardButton("ብሩን አስገብቻለሁ", callback_data='send_screenshot')]]
+    keyboard = [[InlineKeyboardButton("Screenshot", callback_data='send_screenshot')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(payment_message, reply_markup=reply_markup, parse_mode="Markdown")
 
@@ -150,33 +228,41 @@ async def payment_details(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Prompt for Screenshot Upload
 async def handle_send_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
-    await update.callback_query.message.reply_text("Please upload a screenshot of the payment.")
+    await update.callback_query.message.reply_text("Please upload a screenshot of the payment. Screenshot ልካችሁ ከቆየ @TammeJr ላይ ያናግሩኝ.")
 
 
 # Handle Screenshot Upload and Admin Notification
 async def handle_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    photo = update.message.photo[-1].file_id
-    recipient_username = context.user_data['recipient_username']
-    package = context.user_data['package']
-    buyer_chat_id = update.effective_user.id
+    try:
+        photo = update.message.photo[-1].file_id
 
-    keyboard = [
-        [InlineKeyboardButton("✅ Verify", callback_data=f"verify_{buyer_chat_id}_{recipient_username}_{package}")],
-        [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{buyer_chat_id}_{recipient_username}_{package}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+        # Ensure user_data has required keys to avoid KeyError
+        recipient_username = context.user_data.get('recipient_username', 'Unknown')
+        package = context.user_data.get('package', 'Unknown')
+        buyer_chat_id = update.effective_user.id
 
-    await context.bot.send_photo(
-        ADMIN_CHAT_ID,
-        photo,
-        caption=f"📩 *New Order!*\n\n"
-                f"👤 *Recipient Username:* @{recipient_username}\n"
-                f"⭐️ *Package:* {package.replace('star_', '')} Stars\n\n"
-                "Please verify the payment:",
-        reply_markup=reply_markup,
-        parse_mode="Markdown"
-    )
-    await update.message.reply_text("4-3-3ን ስለተጠቀሙ እናሰመግናለን ክፍያ መፈፀማችሁን ለማረጋገጥ እየሞከርን ስለሆነ ጥቂት ይጠብቁን.")
+        keyboard = [
+            [InlineKeyboardButton("✅ Verify", callback_data=f"verify_{buyer_chat_id}_{recipient_username}_{package}")],
+            [InlineKeyboardButton("❌ Reject", callback_data=f"reject_{buyer_chat_id}_{recipient_username}_{package}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        # Send photo to admin for verification
+        await context.bot.send_photo(
+            ADMIN_CHAT_ID,
+            photo,
+            caption=f"📩 *New Order!*\n\n"
+                    f"👤 *Recipient Username:* @{recipient_username}\n"
+                    f"⭐️ *Package:* {package.replace('star_', '')} Stars\n\n"
+                    "Please verify the payment:",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
+        await update.message.reply_text("Thank you! Your payment is being verified. for support contact @tammejr")
+
+    except Exception as e:
+        logging.error(f"Screenshot Error: {e}")
+        await update.message.reply_text("Screenshot እንደገና ያስገቡ - An error occurred while processing your screenshot. Please try again.")
 
 
 # Verification Handler
@@ -229,6 +315,7 @@ def main():
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))  # Register help command
     app.add_handler(CallbackQueryHandler(buy_star, pattern='^buy_star$'))
     app.add_handler(CallbackQueryHandler(show_birr_packages, pattern='^pay_birr$'))
     app.add_handler(CallbackQueryHandler(show_ton_packages, pattern='^pay_ton$'))

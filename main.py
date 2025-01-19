@@ -8,20 +8,20 @@ ADMIN_CHAT_ID = "1453107791"
 
 # Star Packages (Birr and TON)
 birr_prices = {
-    'star_50': 150,
-    'star_75': 230,
+    'star_50': 180,
+    'star_75': 250,
     'star_100': 300,
     'star_150': 450,
     'star_250': 750,
-    'star_350': 980,
-    'star_500': 1400,
+    'star_350': 1050,
+    'star_500': 1500,
     'star_750': 2250,
-    'star_1000': 2600,
-    'star_1500': 4200,
-    'star_2500': 6600,
-    'star_5000': 14600,
+    'star_1000': 3000,
+    'star_1500': 4500,
+    'star_2500': 7000,
+    'star_5000': 15000,
 }
-
+0
 ton_prices = {
     'star_50': 0.15,
     'star_75': 0.21,

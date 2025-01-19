@@ -21,7 +21,7 @@ birr_prices = {
     'star_2500': 7000,
     'star_5000': 15000,
 }
-0
+
 ton_prices = {
     'star_50': 0.15,
     'star_75': 0.21,
